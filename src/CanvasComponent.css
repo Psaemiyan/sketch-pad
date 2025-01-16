@@ -1,0 +1,4 @@
+canvas {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
+}

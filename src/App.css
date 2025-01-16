@@ -1,0 +1,14 @@
+.App {
+  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+canvas {
+  max-width: 100%;
+  border: 2px solid #61dafb !important;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
