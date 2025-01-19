@@ -5,9 +5,10 @@ import './App.css';
 function App() {
   return (
     <div className="App" style={{ overflow: 'hidden', height: '100vh', width: '100vw', position: 'relative' }}>
+      <CanvasComponent />
       <p style={{
         position: 'absolute',
-        top: '10px',
+        bottom: '20px',
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 2,
@@ -22,7 +23,6 @@ function App() {
       }}>
         Work in progress, draw something
       </p>
-      <CanvasComponent />
     </div>
   );
 }

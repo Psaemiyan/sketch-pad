@@ -1,20 +1,32 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { FaPen, FaEraser } from 'react-icons/fa';
 import './CanvasComponent.css';
 
 function CanvasComponent() {
   const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
   const [isEraser, setIsEraser] = useState(false);
+  const [penColor, setPenColor] = useState('#000000');
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
 
-    // Resize canvas to match window
+    // Resize canvas to match window without clearing content
     const resizeCanvas = () => {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      tempCanvas.getContext('2d').drawImage(canvas, 0, 0);
+
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+
       context.lineWidth = 2;
       context.lineCap = 'round';
+
+      // Restore the previous drawing
+      context.drawImage(tempCanvas, 0, 0);
     };
 
     // Initial resize
@@ -23,35 +35,37 @@ function CanvasComponent() {
     // Resize listener
     window.addEventListener('resize', resizeCanvas);
 
-    let isDrawing = false;
-    let lastX = 0;
-    let lastY = 0;
+    let lastX, lastY;
 
     const startDrawing = (e) => {
-      isDrawing = true;
-      [lastX, lastY] = [e.offsetX, e.offsetY];
+      setIsDrawing(true);
+      lastX = e.offsetX;
+      lastY = e.offsetY;
     };
 
     const draw = (e) => {
       if (!isDrawing) return;
+
       context.beginPath();
       context.moveTo(lastX, lastY);
       context.lineTo(e.offsetX, e.offsetY);
-      
+
       if (isEraser) {
-        context.strokeStyle = 'white';
+        context.globalCompositeOperation = 'destination-out';
         context.lineWidth = 20;
       } else {
-        context.strokeStyle = 'black';
+        context.globalCompositeOperation = 'source-over';
+        context.strokeStyle = penColor;
         context.lineWidth = 2;
       }
-      
+
       context.stroke();
-      [lastX, lastY] = [e.offsetX, e.offsetY];
+      lastX = e.offsetX;
+      lastY = e.offsetY;
     };
 
     const stopDrawing = () => {
-      isDrawing = false;
+      setIsDrawing(false);
     };
 
     // Add drawing event listeners
@@ -60,7 +74,6 @@ function CanvasComponent() {
     canvas.addEventListener('mouseup', stopDrawing);
     canvas.addEventListener('mouseout', stopDrawing);
 
-    // Cleanup function
     return () => {
       window.removeEventListener('resize', resizeCanvas);
       canvas.removeEventListener('mousedown', startDrawing);
@@ -68,57 +81,36 @@ function CanvasComponent() {
       canvas.removeEventListener('mouseup', stopDrawing);
       canvas.removeEventListener('mouseout', stopDrawing);
     };
-  }, [isEraser]);
+  }, [isDrawing, isEraser, penColor]);
 
   return (
-    <div style={{ position: 'relative' }}>
-      <div style={{
-        position: 'fixed',
-        top: '10px',
-        right: '10px',
-        zIndex: 2,
-        display: 'flex',
-        gap: '10px'
-      }}>
+    <div className="canvas-container">
+      <div className="controls">
         <button
           onClick={() => setIsEraser(false)}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: isEraser ? '#ddd' : '#007bff',
-            color: isEraser ? 'black' : 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
+          className={`control-button pen-button ${!isEraser ? 'active' : ''}`}
+          title="Pen"
         >
-          Pen
+          <FaPen />
         </button>
         <button
           onClick={() => setIsEraser(true)}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: isEraser ? '#007bff' : '#ddd',
-            color: isEraser ? 'white' : 'black',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
+          className={`control-button eraser-button ${isEraser ? 'active' : ''}`}
+          title="Eraser"
         >
-          Eraser
+          <FaEraser />
         </button>
+        <input
+          type="color"
+          value={penColor}
+          onChange={(e) => setPenColor(e.target.value)}
+          className="color-picker"
+          title="Choose pen color"
+        />
       </div>
-      <canvas 
-        ref={canvasRef} 
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'white',
-          cursor: 'crosshair',
-          outline: 'none'
-        }}
+      <canvas
+        ref={canvasRef}
+        className="canvas"
       />
     </div>
   );
