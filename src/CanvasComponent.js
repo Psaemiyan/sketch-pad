@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { FaPen, FaEraser } from 'react-icons/fa';
+import { FaPen, FaEraser, FaTrash } from 'react-icons/fa';
 import './CanvasComponent.css';
 
 function CanvasComponent() {
@@ -44,6 +44,20 @@ function CanvasComponent() {
       
       context.stroke();
     });
+  }, [zoom]);
+
+  // Add clearCanvas method
+  const clearCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+
+    // Clear the canvas
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.scale(zoom, zoom);
+
+    // Clear stored paths in localStorage
+    localStorage.removeItem('canvasPaths');
   }, [zoom]);
 
   useEffect(() => {
@@ -206,18 +220,18 @@ function CanvasComponent() {
   }, [isDrawing, isEraser, penColor, zoom, handleZoom]);
 
   return (
-    <div className="canvas-container" style={{ overflow: 'hidden', width: '100vw', height: '100vh' }}>
-      <div className="controls">
-        <button
-          onClick={() => setIsEraser(false)}
-          className={`control-button pen-button ${!isEraser ? 'active' : ''}`}
+    <div className="canvas-container">
+      <div className="toolbar">
+        <button 
+          onClick={() => setIsEraser(false)} 
+          className={!isEraser ? 'active' : ''}
           title="Pen"
         >
           <FaPen />
         </button>
-        <button
-          onClick={() => setIsEraser(true)}
-          className={`control-button eraser-button ${isEraser ? 'active' : ''}`}
+        <button 
+          onClick={() => setIsEraser(true)} 
+          className={isEraser ? 'active' : ''}
           title="Eraser"
         >
           <FaEraser />
@@ -229,30 +243,31 @@ function CanvasComponent() {
           className="color-picker"
           title="Choose pen color"
         />
-
         <button
           onClick={() => handleZoom('in')}
-          className="control-button zoom-in"
+          className="zoom-button"
+          title="Zoom In"
         >
           +
         </button>
         <button
           onClick={() => handleZoom('out')}
-          className="control-button zoom-out"
+          className="zoom-button"
+          title="Zoom Out"
         >
           -
         </button>
+        <button 
+          onClick={clearCanvas}
+          className="clear-canvas"
+          title="Clear Canvas"
+        >
+          <FaTrash />
+        </button>
       </div>
-      <canvas
+      <canvas 
         ref={canvasRef}
-        className="canvas"
-        style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%' 
-        }}
+        className="drawing-canvas"
       />
     </div>
   );

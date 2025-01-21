@@ -1,28 +1,30 @@
 .canvas-container {
   position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
-.controls {
+.toolbar {
   position: fixed;
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  height: 40px;
   background-color: rgba(255, 255, 255, 0.9);
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  padding: 0 12px;
+  gap: 10px;
+  padding: 10px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  z-index: 2;
+  z-index: 10;
 }
 
-.control-button {
-  width: 32px;
-  height: 32px;
-  padding: 6px;
+.toolbar button {
+  width: 40px;
+  height: 40px;
+  padding: 8px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -30,56 +32,57 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-}
-
-.control-button svg {
-  width: 16px;
-  height: 16px;
-}
-
-.pen-button {
   background-color: white;
   color: black;
 }
 
-.pen-button.active {
+.toolbar button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.toolbar button.active {
   background-color: #007bff;
   color: white;
 }
 
-.eraser-button {
+.clear-canvas {
   background-color: white;
-  color: black;
+  color: #333;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
-.eraser-button.active {
-  background-color: #007bff;
-  color: white;
+.clear-canvas:hover {
+  background-color: #f0f0f0;
 }
 
-.canvas {
-  position: fixed;
+.clear-canvas svg {
+  width: 20px;
+  height: 20px;
+}
+
+.drawing-canvas {
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: white;
   cursor: crosshair;
-  outline: none;
-  border: none;
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
 }
 
 .color-picker {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   padding: 2px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   background: none;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .color-picker::-webkit-color-swatch-wrapper {
@@ -88,5 +91,66 @@
 
 .color-picker::-webkit-color-swatch {
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
+}
+
+.zoom-button {
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.zoom-button:hover {
+  background-color: #f0f0f0;
+}
+
+.color-picker {
+  width: 40px;
+  height: 40px;
+  padding: 2px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 6px;
+}
+
+.zoom-button {
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  color: black;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.zoom-button:hover {
+  background-color: #f0f0f0;
 }
