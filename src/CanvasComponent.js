@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { FaPen, FaEraser, FaTrash } from 'react-icons/fa';
+import { FaPen, FaEraser, FaTrash, FaSearchPlus, FaSearchMinus } from 'react-icons/fa';
 import './CanvasComponent.css';
 
 function CanvasComponent() {
@@ -9,40 +9,58 @@ function CanvasComponent() {
   const [penColor, setPenColor] = useState('#000000');
   const [zoom, setZoom] = useState(1);
 
-  // Zoom handler
+  // Smoother zoom handler
   const handleZoom = useCallback((direction) => {
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
 
-    const zoomFactor = direction === 'in' ? 1.1 : 0.9;
+    const zoomFactor = direction === 'in' ? 1.05 : 0.95;
     const newZoom = direction === 'in' 
       ? Math.min(zoom * zoomFactor, 3) 
-      : Math.max(zoom * zoomFactor, 0.5);
+      : Math.max(zoom * zoomFactor, 0.3);
 
-    setZoom(newZoom);
-    
-    // Redraw canvas with new zoom
-    context.setTransform(1, 0, 0, 1, 0, 0);
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.scale(newZoom, newZoom);
-    
-    // Redraw stored paths
-    const storedPaths = JSON.parse(localStorage.getItem('canvasPaths') || '[]');
-    storedPaths.forEach(path => {
-      context.beginPath();
-      context.moveTo(path.start.x, path.start.y);
-      context.lineTo(path.end.x, path.end.y);
-      
-      context.strokeStyle = path.isEraser ? 'white' : path.color;
-      context.lineWidth = path.isEraser ? 20 : 2;
-      
-      if (path.isEraser) {
-        context.globalCompositeOperation = 'destination-out';
-      } else {
-        context.globalCompositeOperation = 'source-over';
-      }
-      
-      context.stroke();
+    setZoom(prevZoom => {
+      // Smooth transition
+      const steps = 10;
+      const zoomStep = (newZoom - prevZoom) / steps;
+
+      const animateZoom = (currentStep = 0) => {
+        if (currentStep < steps) {
+          const intermediateZoom = prevZoom + zoomStep * (currentStep + 1);
+          
+          // Redraw canvas with intermediate zoom
+          context.setTransform(1, 0, 0, 1, 0, 0);
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.scale(intermediateZoom, intermediateZoom);
+          
+          // Redraw stored paths
+          const storedPaths = JSON.parse(localStorage.getItem('canvasPaths') || '[]');
+          storedPaths.forEach(path => {
+            context.beginPath();
+            context.moveTo(path.start.x, path.start.y);
+            context.lineTo(path.end.x, path.end.y);
+            
+            context.strokeStyle = path.isEraser ? 'white' : path.color;
+            context.lineWidth = path.isEraser ? 20 : 2;
+            
+            if (path.isEraser) {
+              context.globalCompositeOperation = 'destination-out';
+            } else {
+              context.globalCompositeOperation = 'source-over';
+            }
+            
+            context.stroke();
+          });
+
+          // Schedule next animation frame
+          requestAnimationFrame(() => animateZoom(currentStep + 1));
+        }
+      };
+
+      // Start zoom animation
+      animateZoom();
+
+      return newZoom;
     });
   }, [zoom]);
 
@@ -191,36 +209,26 @@ function CanvasComponent() {
       setIsDrawing(false);
     };
 
-    // Wheel zoom
-    const handleWheel = (e) => {
-      e.preventDefault();
-      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-      const newZoom = Math.min(Math.max(zoom * zoomFactor, 0.5), 3);
-
-      if (newZoom !== zoom) {
-        handleZoom(newZoom > zoom ? 'in' : 'out');
-      }
-    };
-
-    // Event listeners
     canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', stopDrawing);
     canvas.addEventListener('mouseout', stopDrawing);
-    canvas.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
       canvas.removeEventListener('mousedown', startDrawing);
       canvas.removeEventListener('mousemove', draw);
       canvas.removeEventListener('mouseup', stopDrawing);
       canvas.removeEventListener('mouseout', stopDrawing);
-      canvas.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('resize', resizeCanvas);
     };
   }, [isDrawing, isEraser, penColor, zoom, handleZoom]);
 
   return (
     <div className="canvas-container">
+      <canvas 
+        ref={canvasRef}
+        className="drawing-canvas"
+      />
       <div className="toolbar">
         <button 
           onClick={() => setIsEraser(false)} 
@@ -248,14 +256,14 @@ function CanvasComponent() {
           className="zoom-button"
           title="Zoom In"
         >
-          +
+          <FaSearchPlus />
         </button>
         <button
           onClick={() => handleZoom('out')}
           className="zoom-button"
           title="Zoom Out"
         >
-          -
+          <FaSearchMinus />
         </button>
         <button 
           onClick={clearCanvas}
@@ -265,10 +273,6 @@ function CanvasComponent() {
           <FaTrash />
         </button>
       </div>
-      <canvas 
-        ref={canvasRef}
-        className="drawing-canvas"
-      />
     </div>
   );
 }
