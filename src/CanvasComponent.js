@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { FaPen, FaEraser, FaTrash, FaSearchPlus, FaSearchMinus } from 'react-icons/fa';
+import { FaPen, FaEraser, FaTrash, FaSearchPlus, FaSearchMinus, FaCircle, FaSquare } from 'react-icons/fa';
 import './CanvasComponent.css';
+import { useCanvasDrawing, drawStoredPaths } from './CanvasDrawing';
 
 function CanvasComponent() {
   const canvasRef = useRef(null);
@@ -8,6 +9,10 @@ function CanvasComponent() {
   const [isEraser, setIsEraser] = useState(false);
   const [penColor, setPenColor] = useState('#000000');
   const [zoom, setZoom] = useState(1);
+  const [selectedShape, setSelectedShape] = useState(null);
+
+  // Use the custom drawing hook
+  useCanvasDrawing(canvasRef, isDrawing, setIsDrawing, isEraser, penColor, zoom, selectedShape);
 
   // Smoother zoom handler
   const handleZoom = useCallback((direction) => {
@@ -35,22 +40,7 @@ function CanvasComponent() {
           
           // Redraw stored paths
           const storedPaths = JSON.parse(localStorage.getItem('canvasPaths') || '[]');
-          storedPaths.forEach(path => {
-            context.beginPath();
-            context.moveTo(path.start.x, path.start.y);
-            context.lineTo(path.end.x, path.end.y);
-            
-            context.strokeStyle = path.isEraser ? 'white' : path.color;
-            context.lineWidth = path.isEraser ? 20 : 2;
-            
-            if (path.isEraser) {
-              context.globalCompositeOperation = 'destination-out';
-            } else {
-              context.globalCompositeOperation = 'source-over';
-            }
-            
-            context.stroke();
-          });
+          drawStoredPaths(canvas, storedPaths, intermediateZoom);
 
           // Schedule next animation frame
           requestAnimationFrame(() => animateZoom(currentStep + 1));
@@ -103,175 +93,88 @@ function CanvasComponent() {
 
       // Redraw stored paths
       const storedPaths = JSON.parse(localStorage.getItem('canvasPaths') || '[]');
-      storedPaths.forEach(path => {
-        context.beginPath();
-        context.moveTo(path.start.x, path.start.y);
-        context.lineTo(path.end.x, path.end.y);
-        
-        context.strokeStyle = path.isEraser ? 'white' : path.color;
-        context.lineWidth = path.isEraser ? 20 : 2;
-        
-        if (path.isEraser) {
-          context.globalCompositeOperation = 'destination-out';
-        } else {
-          context.globalCompositeOperation = 'source-over';
-        }
-        
-        context.stroke();
-      });
+      drawStoredPaths(canvas, storedPaths, zoom);
     };
 
     // Initial resize
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    let lastX, lastY;
-
-    const getCanvasCoordinates = (clientX, clientY) => {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      
-      return {
-        x: (clientX - rect.left) * scaleX / zoom,
-        y: (clientY - rect.top) * scaleY / zoom
-      };
-    };
-
-    const startDrawing = (e) => {
-      const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
-      lastX = x;
-      lastY = y;
-      setIsDrawing(true);
-      
-      // Immediate first point drawing
-      context.beginPath();
-      context.moveTo(lastX, lastY);
-      context.lineTo(lastX, lastY);
-      
-      context.strokeStyle = isEraser ? 'white' : penColor;
-      context.lineWidth = isEraser ? 20 : 2;
-      
-      if (isEraser) {
-        context.globalCompositeOperation = 'destination-out';
-      } else {
-        context.globalCompositeOperation = 'source-over';
-      }
-      
-      context.stroke();
-
-      // Save first point
-      const storedPaths = JSON.parse(localStorage.getItem('canvasPaths') || '[]');
-      storedPaths.push({
-        start: { x: lastX, y: lastY },
-        end: { x: lastX, y: lastY },
-        color: penColor,
-        isEraser: isEraser
-      });
-      localStorage.setItem('canvasPaths', JSON.stringify(storedPaths));
-    };
-
-    const draw = (e) => {
-      if (!isDrawing) return;
-
-      const { x: currentX, y: currentY } = getCanvasCoordinates(e.clientX, e.clientY);
-
-      context.beginPath();
-      context.moveTo(lastX, lastY);
-      context.lineTo(currentX, currentY);
-      
-      context.strokeStyle = isEraser ? 'white' : penColor;
-      context.lineWidth = isEraser ? 20 : 2;
-      
-      if (isEraser) {
-        context.globalCompositeOperation = 'destination-out';
-      } else {
-        context.globalCompositeOperation = 'source-over';
-      }
-      
-      context.stroke();
-
-      // Save path to localStorage
-      const storedPaths = JSON.parse(localStorage.getItem('canvasPaths') || '[]');
-      storedPaths.push({
-        start: { x: lastX, y: lastY },
-        end: { x: currentX, y: currentY },
-        color: penColor,
-        isEraser: isEraser
-      });
-      localStorage.setItem('canvasPaths', JSON.stringify(storedPaths));
-
-      lastX = currentX;
-      lastY = currentY;
-    };
-
-    const stopDrawing = () => {
-      setIsDrawing(false);
-    };
-
-    canvas.addEventListener('mousedown', startDrawing);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDrawing);
-    canvas.addEventListener('mouseout', stopDrawing);
-
     return () => {
-      canvas.removeEventListener('mousedown', startDrawing);
-      canvas.removeEventListener('mousemove', draw);
-      canvas.removeEventListener('mouseup', stopDrawing);
-      canvas.removeEventListener('mouseout', stopDrawing);
       window.removeEventListener('resize', resizeCanvas);
     };
-  }, [isDrawing, isEraser, penColor, zoom, handleZoom]);
+  }, [zoom]);
+
+  // Reset drawing mode
+  const resetDrawingMode = () => {
+    setIsEraser(false);
+    setSelectedShape(null);
+  };
 
   return (
     <div className="canvas-container">
-      <canvas 
-        ref={canvasRef}
-        className="drawing-canvas"
-      />
-      <div className="toolbar">
-        <button 
-          onClick={() => setIsEraser(false)} 
-          className={!isEraser ? 'active' : ''}
-          title="Pen"
-        >
-          <FaPen />
-        </button>
-        <button 
-          onClick={() => setIsEraser(true)} 
-          className={isEraser ? 'active' : ''}
-          title="Eraser"
-        >
-          <FaEraser />
-        </button>
-        <input
-          type="color"
-          value={penColor}
-          onChange={(e) => setPenColor(e.target.value)}
-          className="color-picker"
-          title="Choose pen color"
-        />
-        <button
-          onClick={() => handleZoom('in')}
-          className="zoom-button"
-          title="Zoom In"
-        >
-          <FaSearchPlus />
-        </button>
-        <button
-          onClick={() => handleZoom('out')}
-          className="zoom-button"
-          title="Zoom Out"
-        >
-          <FaSearchMinus />
-        </button>
-        <button 
-          onClick={clearCanvas}
-          className="clear-canvas"
-          title="Clear Canvas"
-        >
-          <FaTrash />
-        </button>
+      <canvas ref={canvasRef} className="drawing-canvas" />
+      <div className="horizontal-toolbar">
+        <div className="toolbar-section">
+          <button 
+            onClick={() => {
+              setSelectedShape(null);
+              setIsEraser(false);
+            }} 
+            className={`tool-button ${selectedShape === null && !isEraser ? 'active' : ''}`}
+            title="Pen"
+          >
+            <FaPen />
+          </button>
+          <button 
+            onClick={() => {
+              setSelectedShape('square');
+              setIsEraser(false);
+            }} 
+            className={`tool-button ${selectedShape === 'square' ? 'active' : ''}`}
+            title="Square"
+          >
+            <FaSquare />
+          </button>
+          <button 
+            onClick={() => {
+              setIsEraser(!isEraser);
+              setSelectedShape(null);
+            }} 
+            className={`tool-button ${isEraser ? 'active' : ''}`}
+            title="Eraser"
+          >
+            <FaEraser />
+          </button>
+          <input 
+            type="color" 
+            value={penColor} 
+            onChange={(e) => setPenColor(e.target.value)}
+            disabled={isEraser}
+            className="color-picker"
+          />
+          <button 
+            onClick={() => handleZoom('in')}
+            className="zoom-button"
+            title="Zoom In"
+          >
+            <FaSearchPlus />
+          </button>
+          <button 
+            onClick={() => handleZoom('out')}
+            className="zoom-button"
+            title="Zoom Out"
+          >
+            <FaSearchMinus />
+          </button>
+          <button 
+            onClick={clearCanvas}
+            className="clear-button"
+            title="Clear Canvas"
+          >
+            <FaTrash />
+          </button>
+        </div>
       </div>
     </div>
   );

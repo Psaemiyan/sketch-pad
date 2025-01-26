@@ -1,11 +1,13 @@
 .canvas-container {
-  position: relative;
-  width: 100vw;
+  display: flex;
+  flex-direction: column;
   height: 100vh;
+  width: 100vw;
+  position: relative;
   overflow: hidden;
 }
 
-.toolbar {
+.horizontal-toolbar {
   position: fixed;
   top: 20px;
   left: 50%;
@@ -21,7 +23,14 @@
   z-index: 10;
 }
 
-.toolbar button {
+.toolbar-section {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.tool-button, .zoom-button, .clear-button {
   width: 40px;
   height: 40px;
   padding: 8px;
@@ -36,35 +45,22 @@
   color: black;
 }
 
-.toolbar button svg {
+.tool-button svg, .zoom-button svg, .clear-button svg {
   width: 20px;
   height: 20px;
 }
 
-.toolbar button.active {
+.tool-button.active, .zoom-button.active {
   background-color: #007bff;
   color: white;
 }
 
-.clear-canvas {
-  background-color: white;
-  color: #333;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.clear-canvas:hover {
+.tool-button:hover, .zoom-button:hover, .clear-button:hover {
   background-color: #f0f0f0;
 }
 
-.clear-canvas svg {
-  width: 20px;
-  height: 20px;
-}
-
 .drawing-canvas {
+  flex-grow: 1;
   position: absolute;
   top: 0;
   left: 0;
@@ -94,63 +90,7 @@
   border-radius: 6px;
 }
 
-.zoom-button {
-  width: 40px;
-  height: 40px;
-  background-color: white;
-  color: black;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 24px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease;
-}
-
-.zoom-button:hover {
-  background-color: #f0f0f0;
-}
-
-.color-picker {
-  width: 40px;
-  height: 40px;
-  padding: 2px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background: none;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-.color-picker::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-
-.color-picker::-webkit-color-swatch {
-  border: none;
-  border-radius: 6px;
-}
-
-.zoom-button {
-  width: 40px;
-  height: 40px;
-  background-color: white;
-  color: black;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 24px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease;
-}
-
-.zoom-button:hover {
-  background-color: #f0f0f0;
+.color-picker:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
