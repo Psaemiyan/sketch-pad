@@ -1,3 +1,4 @@
+/* Container for the entire canvas and toolbar */
 .canvas-container {
   display: flex;
   flex-direction: column;
@@ -7,6 +8,7 @@
   overflow: hidden;
 }
 
+/* Horizontal toolbar with fixed positioning */
 .horizontal-toolbar {
   position: fixed;
   top: 50%;
@@ -22,8 +24,12 @@
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   z-index: 10;
+  /* Ensure toolbar doesn't scale with canvas zoom */
+  transform-origin: center;
+  will-change: transform;
 }
 
+/* Each section of the toolbar */
 .toolbar-section {
   display: flex;
   flex-direction: column;
@@ -31,6 +37,7 @@
   gap: 8px;
 }
 
+/* Button styles for tool, zoom, and clear buttons */
 .tool-button, .zoom-button, .clear-button {
   width: 32px;
   height: 32px;
@@ -46,20 +53,24 @@
   color: black;
 }
 
+/* SVG size in buttons */
 .tool-button svg, .zoom-button svg, .clear-button svg {
   width: 16px;
   height: 16px;
 }
 
+/* Active button styles */
 .tool-button.active, .zoom-button.active {
   background-color: #007bff;
   color: white;
 }
 
+/* Button hover effects */
 .tool-button:hover, .zoom-button:hover, .clear-button:hover {
   background-color: #f0f0f0;
 }
 
+/* Canvas settings */
 .drawing-canvas {
   flex-grow: 1;
   position: absolute;
@@ -68,8 +79,11 @@
   width: 100%;
   height: 100%;
   cursor: crosshair;
+  /* Optional: Apply transform-origin to ensure correct scaling */
+  transform-origin: 0 0;
 }
 
+/* Color picker style */
 .color-picker {
   width: 32px;
   height: 32px;
@@ -82,6 +96,7 @@
   -webkit-appearance: none;
 }
 
+/* Styling for the color picker swatch */
 .color-picker::-webkit-color-swatch-wrapper {
   padding: 0;
 }
@@ -91,6 +106,7 @@
   border-radius: 4px;
 }
 
+/* Disable color picker if not available */
 .color-picker:disabled {
   opacity: 0.5;
   cursor: not-allowed;

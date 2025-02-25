@@ -2,57 +2,20 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { FaPen, FaEraser, FaTrash, FaSearchPlus, FaSearchMinus, FaCircle, FaSquare } from 'react-icons/fa';
 import './CanvasComponent.css';
 import { useCanvasDrawing, drawStoredPaths } from './CanvasDrawing';
+import { useCanvasZoom } from './CanvasZoom'; // Import the useCanvasZoom hook
 
 function CanvasComponent() {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isEraser, setIsEraser] = useState(false);
   const [penColor, setPenColor] = useState('#000000');
-  const [zoom, setZoom] = useState(1);
   const [selectedShape, setSelectedShape] = useState(null);
 
+  // Use the canvas zoom hook to get zoom state and handler
+  const { zoom, handleZoom, handleWheel } = useCanvasZoom(canvasRef, 1); // Pass initial zoom state here
+
   // Use the custom drawing hook
-  useCanvasDrawing(canvasRef, isDrawing, setIsDrawing, isEraser, penColor, zoom, selectedShape);
-
-  // Smoother zoom handler
-  const handleZoom = useCallback((direction) => {
-    const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-
-    const zoomFactor = direction === 'in' ? 1.05 : 0.95;
-    const newZoom = direction === 'in' 
-      ? Math.min(zoom * zoomFactor, 3) 
-      : Math.max(zoom * zoomFactor, 0.3);
-
-    setZoom(prevZoom => {
-      // Smooth transition
-      const steps = 10;
-      const zoomStep = (newZoom - prevZoom) / steps;
-
-      const animateZoom = (currentStep = 0) => {
-        if (currentStep < steps) {
-          const intermediateZoom = prevZoom + zoomStep * (currentStep + 1);
-          
-          // Redraw canvas with intermediate zoom
-          context.setTransform(1, 0, 0, 1, 0, 0);
-          context.clearRect(0, 0, canvas.width, canvas.height);
-          context.scale(intermediateZoom, intermediateZoom);
-          
-          // Redraw stored paths
-          const storedPaths = JSON.parse(localStorage.getItem('canvasPaths') || '[]');
-          drawStoredPaths(canvas, storedPaths, intermediateZoom);
-
-          // Schedule next animation frame
-          requestAnimationFrame(() => animateZoom(currentStep + 1));
-        }
-      };
-
-      // Start zoom animation
-      animateZoom();
-
-      return newZoom;
-    });
-  }, [zoom]);
+  useCanvasDrawing(canvasRef, isDrawing, setIsDrawing, isEraser, penColor, zoom, selectedShape); // Use zoom directly from the hook
 
   // Add clearCanvas method
   const clearCanvas = useCallback(() => {
@@ -113,7 +76,11 @@ function CanvasComponent() {
 
   return (
     <div className="canvas-container">
-      <canvas ref={canvasRef} className="drawing-canvas" />
+      <canvas
+        ref={canvasRef}
+        className="drawing-canvas"
+        onWheel={handleWheel} // Add this for smooth zooming with trackpad
+      />
       <div className="horizontal-toolbar">
         <div className="toolbar-section">
           <button 
@@ -126,16 +93,6 @@ function CanvasComponent() {
           >
             <FaPen />
           </button>
-          {/* <button 
-            onClick={() => {
-              setSelectedShape('square');
-              setIsEraser(false);
-            }} 
-            className={`tool-button ${selectedShape === 'square' ? 'active' : ''}`}
-            title="Square"
-          >
-            <FaSquare />
-          </button> */}
           <button 
             onClick={() => {
               setIsEraser(!isEraser);
@@ -154,14 +111,14 @@ function CanvasComponent() {
             className="color-picker"
           />
           <button 
-            onClick={() => handleZoom('in')}
+            onClick={() => handleZoom('in')} // Use handleZoom from the hook
             className="zoom-button"
             title="Zoom In"
           >
             <FaSearchPlus />
           </button>
           <button 
-            onClick={() => handleZoom('out')}
+            onClick={() => handleZoom('out')} // Use handleZoom from the hook
             className="zoom-button"
             title="Zoom Out"
           >
