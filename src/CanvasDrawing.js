@@ -56,9 +56,9 @@ export function useCanvasDrawing(canvasRef, isDrawing, setIsDrawing, isEraser, p
 
     const draw = (e) => {
       if (!isDrawing) return;
-
+    
       const { x: currentX, y: currentY } = getCanvasCoordinates(e.clientX, e.clientY);
-
+    
       context.beginPath();
       context.moveTo(lastX, lastY);
       context.lineTo(currentX, currentY);
@@ -68,29 +68,57 @@ export function useCanvasDrawing(canvasRef, isDrawing, setIsDrawing, isEraser, p
       
       if (isEraser) {
         context.globalCompositeOperation = 'destination-out';
+        eraseFromStorage(currentX, currentY); // Properly erase from localStorage
       } else {
         context.globalCompositeOperation = 'source-over';
+    
+        // Save path to localStorage
+        const storedPaths = JSON.parse(localStorage.getItem('canvasPaths') || '[]');
+        storedPaths.push({
+          start: { x: lastX, y: lastY },
+          end: { x: currentX, y: currentY },
+          color: penColor,
+          isEraser: isEraser
+        });
+        localStorage.setItem('canvasPaths', JSON.stringify(storedPaths));
       }
       
       context.stroke();
-
-      // Save path to localStorage
-      const storedPaths = JSON.parse(localStorage.getItem('canvasPaths') || '[]');
-      storedPaths.push({
-        start: { x: lastX, y: lastY },
-        end: { x: currentX, y: currentY },
-        color: penColor,
-        isEraser: isEraser
-      });
-      localStorage.setItem('canvasPaths', JSON.stringify(storedPaths));
-
+      
       lastX = currentX;
       lastY = currentY;
     };
+    
+    
 
     const stopDrawing = () => {
       setIsDrawing(false);
     };
+
+    
+    const eraseFromStorage = (x, y) => {
+      let storedPaths = JSON.parse(localStorage.getItem('canvasPaths') || '[]');
+    
+      // Remove paths that are within the eraser radius (approximate collision detection)
+      storedPaths = storedPaths.filter(path => {
+        if (path.isEraser) return true; // Keep previous eraser strokes
+    
+        const { start, end } = path;
+        
+        // Check if eraser is near the path segment
+        const distance = (x1, y1, x2, y2) => Math.hypot(x2 - x1, y2 - y1);
+        
+        const eraserRadius = 20; // Same as the eraser line width
+        return (
+          distance(x, y, start.x, start.y) > eraserRadius &&
+          distance(x, y, end.x, end.y) > eraserRadius
+        );
+      });
+    
+      localStorage.setItem('canvasPaths', JSON.stringify(storedPaths));
+    };
+    
+  
 
     canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mousemove', draw);
@@ -113,19 +141,23 @@ export function drawStoredPaths(canvas, storedPaths, zoom) {
   context.scale(zoom, zoom);
 
   storedPaths.forEach(path => {
-    context.beginPath();
-    context.moveTo(path.start.x, path.start.y);
-    context.lineTo(path.end.x, path.end.y);
-    
-    context.strokeStyle = path.isEraser ? 'white' : path.color;
-    context.lineWidth = path.isEraser ? 20 : 2;
-    
-    if (path.isEraser) {
-      context.globalCompositeOperation = 'destination-out';
-    } else {
-      context.globalCompositeOperation = 'source-over';
+    // Check if path has start and end properties
+    if (path.start && path.end) {
+      context.beginPath();
+      context.moveTo(path.start.x, path.start.y);
+      context.lineTo(path.end.x, path.end.y);
+
+      context.strokeStyle = path.isEraser ? 'white' : path.color;
+      context.lineWidth = path.isEraser ? 20 : 2;
+
+      if (path.isEraser) {
+        context.globalCompositeOperation = 'destination-out';
+      } else {
+        context.globalCompositeOperation = 'source-over';
+      }
+
+      context.stroke();
     }
-    
-    context.stroke();
   });
 }
+

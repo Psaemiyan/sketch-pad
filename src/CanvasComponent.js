@@ -126,7 +126,7 @@ function CanvasComponent() {
           >
             <FaPen />
           </button>
-          <button 
+          {/* <button 
             onClick={() => {
               setSelectedShape('square');
               setIsEraser(false);
@@ -135,7 +135,7 @@ function CanvasComponent() {
             title="Square"
           >
             <FaSquare />
-          </button>
+          </button> */}
           <button 
             onClick={() => {
               setIsEraser(!isEraser);
